@@ -1,0 +1,93 @@
+
+library pgraph;
+pqgwin many;
+
+@ PARAMETER VALUES @
+
+beta = 0.96;
+theta = 0.36;
+delta = 0.08;
+
+@ USEFUL FUNCTIONS @
+
+fn u(c)=ln(c);
+fn r(k)=theta*k^(theta-1)-delta;
+fn y(k)=k^theta;
+
+@ HORIZON @
+
+capt=100;
+
+@ CONVERGENCE CRITERION @
+
+maxgap=0.01;
+
+@ INITIAL CAPITAL @
+
+cap0=1;
+
+kseq=zeros(capt+1,1);
+cseq=zeros(capt+1,1);
+
+kseq[1]=cap0;
+
+@ GUESS RANGE for INITIAL CONSUMPTION @
+
+cguessl=0.1;
+cguessh=1;
+
+cguess=0.5*(cguessl+cguessh);
+cseq[1]=cguess;
+
+gapk=1;
+
+@ START ITERATING @
+
+it=1; do while gapk>=maxgap;
+
+i=2; do while i<=capt+1;
+
+@ LAW OF MOTION for CAPITAL @
+
+kseq[i]=y(kseq[i-1])+(1-delta)*kseq[i-1]-cseq[i-1];
+
+@ CHECK WHETHER CAPITAL GOES NEGATIVE - if SO REDUCE GUESS for C_0 @
+
+if kseq[i]<0;
+    cguessh=cguess;
+    cguess=0.5*(cguessl+cguessh);
+    cseq[1]=cguess;
+    i=1;
+else;
+
+@ INTERTEMPORAL FOC for CONSUMPTION @ 
+
+    cseq[i]=beta*(1+r(kseq[i]))*cseq[i-1];
+endif;
+
+i=i+1; endo;
+
+@ CHECK TERMINAL CAPITAL and ADJUST C_0 EFFECTIVELY @
+
+if (kseq[capt+1]>0.0);
+    cguessl=cguess;
+else;
+    cguessh=cguess;
+endif;
+
+cguess=0.5*(cguessl+cguessh);
+cseq[1]=cguess;
+
+
+gapk=abs(kseq[capt+1]);
+
+it=it+1; endo;
+
+@ GRAPHS @
+
+title("capital");
+xlabel("date");
+xy(seqa(1,1,capt+1),kseq);
+
+title("consumption");
+xy(seqa(1,1,capt),cseq[1:capt]);
